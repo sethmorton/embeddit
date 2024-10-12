@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Pinecone - Vercel AI SDK Example",
+  title: "Embeddit",
   description: "Pinecone - Vercel AI SDK Example",
 };
 
