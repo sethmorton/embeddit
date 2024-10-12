@@ -1,128 +1,143 @@
-import { getEmbeddings } from "@/utils/embeddings";
-import { Document, MarkdownTextSplitter, RecursiveCharacterTextSplitter } from "@pinecone-database/doc-splitter";
-import { Pinecone, PineconeRecord, ServerlessSpecCloudEnum } from "@pinecone-database/pinecone";
-import { chunkedUpsert } from '../../utils/chunkedUpsert'
+import { getBatchEmbeddings } from "@/utils/embeddings";
+import {
+  Document,
+  RecursiveCharacterTextSplitter,
+} from "@pinecone-database/doc-splitter";
+import {
+  Pinecone,
+  PineconeRecord,
+  ServerlessSpecCloudEnum,
+} from "@pinecone-database/pinecone";
+import { chunkedUpsert } from "../../utils/chunkedUpsert";
 import md5 from "md5";
-import { Crawler, Page } from "./crawler";
-import { truncateStringByBytes } from "@/utils/truncateString"
+import { RedditApiService } from "./RedditApiService";
+import { truncateStringByBytes } from "@/utils/truncateString";
+import { RedditPost } from "../../../../types";
+import React from "react";
 
 interface SeedOptions {
-  splittingMethod: string
-  chunkSize: number
-  chunkOverlap: number
+  chunkSize: number;
+  chunkOverlap: number;
 }
 
-type DocumentSplitter = RecursiveCharacterTextSplitter | MarkdownTextSplitter
-
-async function seed(url: string, limit: number, indexName: string, cloudName: ServerlessSpecCloudEnum, regionName: string, options: SeedOptions) {
+async function seed(
+  subreddit: string,
+  limit: number,
+  indexName: string,
+  cloudName: ServerlessSpecCloudEnum,
+  regionName: string,
+  options: SeedOptions,
+  setProgress: React.Dispatch<React.SetStateAction<number>>
+) {
   try {
-    // Initialize the Pinecone client
     const pinecone = new Pinecone();
+    const { chunkSize, chunkOverlap } = options;
 
-    // Destructure the options object
-    const { splittingMethod, chunkSize, chunkOverlap } = options;
+    const redditApiService = new RedditApiService(
+      process.env.REDDIT_AUTH_TOKEN!,
+      process.env.REDDIT_USER_AGENT!
+    );
 
-    // Create a new Crawler with depth 1 and maximum pages as limit
-    const crawler = new Crawler(1, limit || 100);
+    const posts = await redditApiService.getSubredditPostsData(
+      subreddit,
+      limit
+    );
+    setProgress(10);
 
-    // Crawl the given URL and get the pages
-    const pages = await crawler.crawl(url) as Page[];
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize,
+      chunkOverlap,
+    });
+    const documents = await Promise.all(
+      posts.map((post) => prepareDocument(post, splitter))
+    );
+    setProgress(30);
 
-    // Choose the appropriate document splitter based on the splitting method
-    const splitter: DocumentSplitter = splittingMethod === 'recursive' ?
-      new RecursiveCharacterTextSplitter({ chunkSize, chunkOverlap }) : new MarkdownTextSplitter({});
-
-    // Prepare documents by splitting the pages
-    const documents = await Promise.all(pages.map(page => prepareDocument(page, splitter)));
-
-    // Create Pinecone index if it does not exist
-    const indexList: string[] = (await pinecone.listIndexes())?.indexes?.map(index => index.name) || [];
-    const indexExists = indexList.includes(indexName);
-    if (!indexExists) {
+    const indexList =
+      (await pinecone.listIndexes())?.indexes?.map((index) => index.name) || [];
+    if (!indexList.includes(indexName)) {
       await pinecone.createIndex({
         name: indexName,
         dimension: 1536,
         waitUntilReady: true,
-        spec: { 
-          serverless: { 
-              cloud: cloudName, 
-              region: regionName
-          }
-        } 
+        spec: {
+          serverless: {
+            cloud: cloudName,
+            region: regionName,
+          },
+        },
       });
     }
 
-    const index = pinecone.Index(indexName)
+    const index = pinecone.Index(indexName);
 
-    // Get the vector embeddings for the documents
-    const vectors = await Promise.all(documents.flat().map(embedDocument));
+    const flatDocuments = documents.flat();
+    const batchSize = 100; // Adjust based on your rate limits and performance needs
+    const batches = Math.ceil(flatDocuments.length / batchSize) || 1;
 
-    // Upsert vectors into the Pinecone index
-    await chunkedUpsert(index!, vectors, '', 10);
+    for (let i = 0; i < batches; i++) {
+      const batch = flatDocuments.slice(i * batchSize, (i + 1) * batchSize);
+      const batchEmbeddings = await getBatchEmbeddings(
+        batch.map((doc) => doc.pageContent)
+      );
+      const vectors = batch.map((doc, index) =>
+        embedDocument(doc, batchEmbeddings[index])
+      );
+      await chunkedUpsert(index!, vectors, "");
+      setProgress(30 + Math.floor(((i + 1) / batches) * 70));
+    }
 
-    // Return the first document
-    return documents[0];
+    return flatDocuments;
   } catch (error) {
     console.error("Error seeding:", error);
     throw error;
   }
 }
 
-async function embedDocument(doc: Document): Promise<PineconeRecord> {
-  try {
-    // Generate OpenAI embeddings for the document content
-    const embedding = await getEmbeddings(doc.pageContent);
+function embedDocument(doc: Document, embedding: number[]): PineconeRecord {
+  const hash = md5(doc.pageContent);
 
-    // Create a hash of the document content
-    const hash = md5(doc.pageContent);
-
-    // Return the vector embedding object
-    return {
-      id: hash, // The ID of the vector is the hash of the document content
-      values: embedding, // The vector values are the OpenAI embeddings
-      metadata: { // The metadata includes details about the document
-        chunk: doc.pageContent, // The chunk of text that the vector represents
-        text: doc.metadata.text as string, // The text of the document
-        url: doc.metadata.url as string, // The URL where the document was found
-        hash: doc.metadata.hash as string // The hash of the document content
-      }
-    } as PineconeRecord;
-  } catch (error) {
-    console.log("Error embedding document: ", error)
-    throw error
-  }
+  return {
+    id: hash,
+    values: embedding,
+    metadata: {
+      chunk: doc.pageContent,
+      text: doc.metadata.text as string,
+      title: doc.metadata.title as string,
+      author: doc.metadata.author as string,
+      url: doc.metadata.url as string,
+      hash: doc.metadata.hash as string,
+    },
+  } as PineconeRecord;
 }
 
-async function prepareDocument(page: Page, splitter: DocumentSplitter): Promise<Document[]> {
-  // Get the content of the page
-  const pageContent = page.content;
-
-  // Split the documents using the provided splitter
+async function prepareDocument(
+  post: RedditPost,
+  splitter: RecursiveCharacterTextSplitter
+): Promise<Document[]> {
+  const pageContent = `Title: ${post.title}\n\nContent: ${post.selftext}`;
+  console.log(pageContent);
+  console.log(post.selftext);
   const docs = await splitter.splitDocuments([
     new Document({
       pageContent,
       metadata: {
-        url: page.url,
-        // Truncate the text to a maximum byte length
-        text: truncateStringByBytes(pageContent, 36000)
+        url: post.url,
+        text: truncateStringByBytes(pageContent, 36000),
+        title: post.title,
+        author: post.author,
+        content: post.selftext,
       },
     }),
   ]);
 
-  // Map over the documents and add a hash to their metadata
-  return docs.map((doc: Document) => {
-    return {
-      pageContent: doc.pageContent,
-      metadata: {
-        ...doc.metadata,
-        // Create a hash of the document content
-        hash: md5(doc.pageContent)
-      },
-    };
-  });
+  return docs.map((doc: Document) => ({
+    ...doc,
+    metadata: {
+      ...doc.metadata,
+      hash: md5(doc.pageContent),
+    },
+  }));
 }
-
-
-
 
 export default seed;
