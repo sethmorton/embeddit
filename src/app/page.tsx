@@ -61,7 +61,7 @@ const Page: React.FC = () => {
       <button
         onClick={() => {
           window.open(
-            "https://github.com/pinecone-io/pinecone-vercel-starter",
+            "https://github.com/sethmorton/embeddit",
             "_blank"
           );
         }}
