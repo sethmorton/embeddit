@@ -7,7 +7,7 @@ export default function Header({ className }: { className?: string }) {
     <header
       className={`flex items-center justify-center text-gray-200 text-2xl ${className}`}
     >
-      <div className="text-4xl ml-3 mr-3">+</div>
+      <div className="text-4xl ml-3 mr-3">Embeddit</div>
     </header>
   );
 }

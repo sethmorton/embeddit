@@ -3,7 +3,7 @@
 import { Button } from "./Button";
 import React, { FC } from "react";
 import { IconContext } from "react-icons";
-import { AiOutlineLink } from "react-icons/ai";
+import { SiReddit } from "react-icons/si"; // Import Reddit icon
 import Link from "next/link";
 
 export interface IUrlEntry {
@@ -34,11 +34,11 @@ const UrlButton: FC<IURLButtonProps> = ({ entry, onClick }) => (
         href={entry.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="bg-blue-500 hover:bg-blue-600 active:bg-brand-700 dark:bg-brand-400 dark:hover:bg-brand-300 dark:active:bg-brand-200 flex items-center justify-center rounded-full p-2 text-3xl text-white transition duration-200 hover:cursor-pointer dark:text-white"
+        className="bg-white-500 hover:bg-white-600 active:bg-brand-700 dark:bg-brand-400 dark:hover:bg-brand-300 dark:active:bg-brand-200 flex items-center justify-center rounded-full p-2 text-3xl text-white transition duration-200 hover:cursor-pointer dark:text-white"
       >
-        <AiOutlineLink
-          color="white"
-          fontSize={14}
+        <SiReddit
+          color="red"
+          fontSize={24}
           className="hover:text-green"
         />
       </a>
@@ -48,7 +48,7 @@ const UrlButton: FC<IURLButtonProps> = ({ entry, onClick }) => (
           style={{
             zIndex: -1,
             background:
-              "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
+              "linear-gradient(90deg, white, rgba(255,255,255,0.5), white)",
             animation: "shimmer 2s infinite",
           }}
         ></div>
