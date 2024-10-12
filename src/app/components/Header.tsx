@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+
+
 export default function Header({ className }: { className?: string }) {
   return (
     <header
