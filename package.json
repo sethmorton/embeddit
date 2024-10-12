@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.38.0",
-    "@types/md5": "^2.3.2"
+    "@types/md5": "^2.3.2",
+    "daisyui": "^4.12.13"
   }
 }
