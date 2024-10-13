@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     START CONTEXT BLOCK
     ${context}
     END OF CONTEXT BLOCK
-    
+    If the user asks for a question outside of the context, respond with "Sorry, please provide a question within the context of the provided context. "
+
     When responding, follow these guidelines:
     
     1. Always begin your response with "## Reddit Insights:"

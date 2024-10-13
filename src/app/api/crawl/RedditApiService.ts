@@ -39,6 +39,8 @@ class RedditApiService {
     }
   }
 
+  // In RedditApiService.ts
+
   extractPostData(rawPosts: any[]): RedditPost[] {
     return rawPosts.map((post) => ({
       id: post.data.id,
@@ -49,6 +51,8 @@ class RedditApiService {
       created_utc: post.data.created_utc,
       url: post.data.url,
       selftext: post.data.selftext,
+      subreddit: post.data.subreddit,
+      permalink: post.data.permalink,
     }));
   }
 
@@ -56,7 +60,6 @@ class RedditApiService {
     subreddit: string,
     limit: number = 10
   ): Promise<RedditPost[]> {
-    console.log(this.generateHeader());
     const rawPosts = await this.getSubredditPosts(subreddit, limit);
     return this.extractPostData(rawPosts);
   }

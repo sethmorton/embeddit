@@ -7,4 +7,6 @@ export interface RedditPost {
   created_utc: number;
   url: string;
   selftext: string;
+  subreddit: string;
+  permalink: string;
 }

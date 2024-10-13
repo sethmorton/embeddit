@@ -53,6 +53,8 @@ async function seed(
     );
     setProgress(30);
 
+    console.log(documents);
+
     const indexList =
       (await pinecone.listIndexes())?.indexes?.map((index) => index.name) || [];
     if (!indexList.includes(indexName)) {
@@ -76,15 +78,29 @@ async function seed(
     const batches = Math.ceil(flatDocuments.length / batchSize) || 1;
 
     for (let i = 0; i < batches; i++) {
-      const batch = flatDocuments.slice(i * batchSize, (i + 1) * batchSize);
-      const batchEmbeddings = await getBatchEmbeddings(
-        batch.map((doc) => doc.pageContent)
-      );
-      const vectors = batch.map((doc, index) =>
-        embedDocument(doc, batchEmbeddings[index])
-      );
-      await chunkedUpsert(index!, vectors, "");
-      setProgress(30 + Math.floor(((i + 1) / batches) * 70));
+      try {
+        const batch = flatDocuments.slice(i * batchSize, (i + 1) * batchSize);
+        console.log(`Processing batch ${i + 1} of ${batches}`);
+        console.log(`Batch size: ${batch.length}`);
+
+        const batchEmbeddings = await getBatchEmbeddings(
+          batch.map((doc) => doc.pageContent)
+        );
+
+        console.log(`Received embeddings: ${batchEmbeddings.length}`);
+
+        const vectors = batch.map((doc, index) =>
+          embedDocument(doc, batchEmbeddings[index])
+        );
+        await chunkedUpsert(index!, vectors, "");
+        setProgress(30 + Math.floor(((i + 1) / batches) * 70));
+      } catch (error) {
+        console.error(`Error processing batch ${i + 1}:`, error);
+        // Decide how you want to handle batch errors. You might want to:
+        // - continue with the next batch
+        // - retry the current batch
+        // - or throw an error to stop the entire process
+      }
     }
 
     return flatDocuments;
@@ -111,23 +127,41 @@ function embedDocument(doc: Document, embedding: number[]): PineconeRecord {
   } as PineconeRecord;
 }
 
+// In seed.ts
+
 async function prepareDocument(
   post: RedditPost,
   splitter: RecursiveCharacterTextSplitter
 ): Promise<Document[]> {
-  const pageContent = `Title: ${post.title}\n\nContent: ${post.selftext}`;
-  console.log(pageContent);
-  console.log(post.selftext);
+  const pageContent = [
+    `Title: ${post.title || "No Title"}`,
+    `Author: u/${post.author || "Unknown"}`,
+    `Subreddit: r/${post.subreddit || "Unknown"}`,
+    `Score: ${post.score ?? "Unknown"}`,
+    `Number of Comments: ${post.num_comments ?? "Unknown"}`,
+    `URL: ${post.url || "No URL"}`,
+    `Content:`,
+    post.selftext ? post.selftext.trim() : "No content",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const metadata = {
+    text: truncateStringByBytes(pageContent, 36000),
+    title: post.title || "No Title",
+    author: post.author || "Unknown",
+    subreddit: post.subreddit || "Unknown",
+    score: post.score ?? 0,
+    num_comments: post.num_comments ?? 0,
+    created_utc: post.created_utc || "",
+    url: post.url || "",
+    permalink: post.permalink || "",
+  };
+
   const docs = await splitter.splitDocuments([
     new Document({
       pageContent,
-      metadata: {
-        url: post.url,
-        text: truncateStringByBytes(pageContent, 36000),
-        title: post.title,
-        author: post.author,
-        content: post.selftext,
-      },
+      metadata,
     }),
   ]);
 

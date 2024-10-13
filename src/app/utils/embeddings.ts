@@ -13,9 +13,25 @@ export async function getBatchEmbeddings(
       model: "text-embedding-ada-002",
       input: inputs.map((input) => input.replace(/\n/g, " ")),
     });
-
     const result = await response.json();
-    return result.data.map((item: any) => item.embedding as number[]);
+
+    if (!result.data) {
+      console.error("Unexpected API response structure:", result);
+      throw new Error("Unexpected API response structure");
+    }
+
+    if (!Array.isArray(result.data)) {
+      console.error("API response data is not an array:", result.data);
+      throw new Error("API response data is not an array");
+    }
+
+    return result.data.map((item: any) => {
+      if (!item.embedding || !Array.isArray(item.embedding)) {
+        console.error("Invalid embedding in API response:", item);
+        throw new Error("Invalid embedding in API response");
+      }
+      return item.embedding as number[];
+    });
   } catch (e) {
     console.error("Error calling OpenAI embedding API: ", e);
     throw new Error(`Error calling OpenAI embedding API: ${e}`);
