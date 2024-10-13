@@ -1,6 +1,6 @@
 // src/app/components/Chat/Messages.tsx
 import { Message } from "ai";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { marked } from "marked";
 
 export default function Messages({
@@ -11,9 +11,24 @@ export default function Messages({
   isCrawlComplete: boolean;
 }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [renderedMessages, setRenderedMessages] = useState<{
+    [key: number]: string;
+  }>({});
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    const renderMessages = async () => {
+      const rendered: { [key: number]: string } = {};
+      for (let i = 0; i < messages.length; i++) {
+        rendered[i] = await marked(messages[i].content);
+      }
+      setRenderedMessages(rendered);
+    };
+
+    renderMessages();
   }, [messages]);
 
   // Function to safely render HTML content
@@ -79,9 +94,15 @@ export default function Messages({
                     : "bg-blue-100 text-gray-800"
                 }`}
               >
-                <div
-                  dangerouslySetInnerHTML={renderHTML(marked(msg.content))}
-                />
+                {renderedMessages[index] ? (
+                  <div
+                    dangerouslySetInnerHTML={renderHTML(
+                      renderedMessages[index]
+                    )}
+                  />
+                ) : (
+                  <div>Loading...</div>
+                )}
               </div>
             </div>
           ))
