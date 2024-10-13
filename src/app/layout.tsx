@@ -5,6 +5,8 @@ export const metadata = {
 
 import "../global.css";
 
+//
+
 export default function RootLayout({
   children,
 }: {
