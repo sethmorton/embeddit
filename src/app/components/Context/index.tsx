@@ -5,11 +5,12 @@ import { clearIndex, crawlDocument } from "./utils";
 import { ServerlessSpecCloudEnum } from "@pinecone-database/pinecone";
 import { Input } from "./Input";
 import { Button } from "./Button";
+import { Spinner } from "../Loading/Spinner";
 
 interface ContextProps {
   className: string;
   selected: string[] | null;
-  onCrawlComplete: (completed: boolean) => void; // Callback to notify when crawl is complete
+  onCrawlComplete: (completed: boolean) => void;
 }
 
 export const Context: React.FC<ContextProps> = ({
@@ -47,14 +48,14 @@ export const Context: React.FC<ContextProps> = ({
         indexName,
         cloudName,
         regionName,
-        256, // chunkSize
-        1 // chunkOverlap
+        256,
+        1
       );
       setIsCrawlComplete(true);
-      onCrawlComplete(true); // Notify parent that crawling is complete
+      onCrawlComplete(true);
     } catch (error) {
       console.error("Crawl failed:", error);
-      onCrawlComplete(false); // Notify parent about failure
+      onCrawlComplete(false);
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +81,7 @@ export const Context: React.FC<ContextProps> = ({
         </div>
         <div className="form-control mb-4">
           <label className="label">
-            <span className="label-text">Limit</span>
+            <span className="label-text">Number of Posts</span>
           </label>
           <Input
             type="number"
@@ -94,15 +95,16 @@ export const Context: React.FC<ContextProps> = ({
           <Button
             onClick={handleCrawl}
             disabled={isLoading}
-            className={`btn btn-primary flex-1 ${isLoading ? "loading" : ""}`}
+            className="btn btn-primary flex-1"
           >
-            {isLoading ? "Crawling..." : "Crawl Subreddit"}
-          </Button>
-          <Button
-            onClick={() => clearIndex(setEntries, setCards)}
-            className="btn btn-secondary flex-1"
-          >
-            Clear Index
+            {isLoading ? (
+              <>
+                <Spinner size={20} className="mr-2" />
+                Crawling...
+              </>
+            ) : (
+              "Crawl Subreddit"
+            )}
           </Button>
         </div>
       </div>

@@ -1,0 +1,164 @@
+.rendered-content {
+    color: black;
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+.rendered-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rendered-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.rendered-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.rendered-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Headings */
+.rendered-content h1, .rendered-content h2, .rendered-content h3, 
+.rendered-content h4, .rendered-content h5, .rendered-content h6 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+}
+
+.rendered-content h1 { font-size: 2em; }
+.rendered-content h2 { font-size: 1.5em; }
+.rendered-content h3 { font-size: 1.17em; }
+.rendered-content h4 { font-size: 1em; }
+.rendered-content h5 { font-size: 0.83em; }
+.rendered-content h6 { font-size: 0.67em; }
+
+/* Paragraphs and text formatting */
+.rendered-content p {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.rendered-content strong { font-weight: bold; }
+.rendered-content em { font-style: italic; }
+.rendered-content del { text-decoration: line-through; }
+
+/* Lists */
+.rendered-content ul, .rendered-content ol {
+    margin-top: 1em;
+    margin-bottom: 1em;
+    padding-left: 2em;
+}
+
+.rendered-content ul { list-style-type: disc; }
+.rendered-content ol { list-style-type: decimal; }
+.rendered-content li { margin-bottom: 0.5em; }
+
+/* Nested lists */
+.rendered-content ul ul, .rendered-content ol ul { list-style-type: circle; }
+.rendered-content ul ul ul, .rendered-content ol ul ul { list-style-type: square; }
+
+/* Blockquotes */
+.rendered-content blockquote {
+    margin: 1em 0;
+    padding-left: 1em;
+    border-left: 4px solid #ccc;
+    color: #666;
+}
+
+/* Code blocks */
+.rendered-content pre, .rendered-content code {
+    background-color: #f4f4f4;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.rendered-content pre {
+    padding: 1em;
+    overflow-x: auto;
+}
+
+.rendered-content code {
+    padding: 0.2em 0.4em;
+}
+
+/* Horizontal rule */
+.rendered-content hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 1em 0;
+}
+
+/* Links */
+.rendered-content a {
+    color: #0366d6;
+    text-decoration: none;
+}
+
+.rendered-content a:hover {
+    text-decoration: underline;
+}
+
+/* Images */
+.rendered-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Tables */
+.rendered-content table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+}
+
+.rendered-content th, .rendered-content td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.rendered-content th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Definition lists */
+.rendered-content dl {
+    margin: 1em 0;
+}
+
+.rendered-content dt {
+    font-weight: bold;
+}
+
+.rendered-content dd {
+    margin-left: 2em;
+    margin-bottom: 1em;
+}
+
+/* Task lists */
+.rendered-content input[type="checkbox"] {
+    margin-right: 0.5em;
+}
+
+/* Footnotes */
+.rendered-content .footnote {
+    font-size: 0.8em;
+    vertical-align: super;
+}
+
+.rendered-content .footnotes {
+    border-top: 1px solid #ccc;
+    margin-top: 2em;
+    padding-top: 1em;
+}
+
+/* Syntax highlighting (you may need to adjust these based on your syntax highlighting theme) */
+.rendered-content .hljs-keyword { color: #0000ff; }
+.rendered-content .hljs-string { color: #008000; }
+.rendered-content .hljs-number { color: #009999; }
+.rendered-content .hljs-comment { color: #999999; }

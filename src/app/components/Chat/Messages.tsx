@@ -2,6 +2,7 @@
 import { Message } from "ai";
 import { useRef, useEffect, useState } from "react";
 import { marked } from "marked";
+import styles from "./Messages.module.css";
 
 export default function Messages({
   messages,
@@ -92,7 +93,7 @@ export default function Messages({
                   msg.role === "assistant"
                     ? "bg-white text-gray-800"
                     : "bg-blue-100 text-gray-800"
-                }`}
+                } ${styles["rendered-content"]}`}
               >
                 {renderedMessages[index] ? (
                   <div
