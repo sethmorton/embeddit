@@ -99,7 +99,7 @@ export const Context: React.FC<ContextProps> = ({
           >
             {isLoading ? (
               <>
-                <Spinner size={20} className="mr-2" />
+                <Spinner size={20} />
                 Crawling...
               </>
             ) : (
