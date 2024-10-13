@@ -20,7 +20,7 @@ export const Context: React.FC<ContextProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [entries, setEntries] = useState<IUrlEntry[]>([]);
-  const [cards, setCards] = useState<ICard[]>([]);
+  const [cards, setCards] = useState<ICard[]>([]); // Initialize with an empty array
   const [limit, setLimit] = useState(10);
   const [subreddit, setSubreddit] = useState("sibo");
   const [indexName] = useState(process.env.PINECONE_INDEX || "");
@@ -110,9 +110,13 @@ export const Context: React.FC<ContextProps> = ({
       </div>
       <div className="divider"></div>
       <div className="p-4 overflow-y-auto flex-1">
-        {cards.map((card, key) => (
-          <Card key={key} card={card} selected={selected} />
-        ))}
+        {cards.length > 0 ? (
+          cards.map((card, key) => (
+            <Card key={key} card={card} selected={selected} />
+          ))
+        ) : (
+          <p>No cards available</p>
+        )}
       </div>
     </div>
   );
