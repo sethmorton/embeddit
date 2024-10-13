@@ -1,7 +1,5 @@
-// page.tsx
-
+// Page.tsx
 "use client";
-
 import React, { useEffect, useRef, useState, FormEvent } from "react";
 import { Context } from "@/components/Context";
 import Header from "@/components/Header";
@@ -15,6 +13,8 @@ const Page: React.FC = () => {
   const [gotMessages, setGotMessages] = useState(false);
   const [context, setContext] = useState<string[] | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [subreddit, setSubreddit] = useState("sibo");
+  const [isCrawlComplete, setIsCrawlComplete] = useState(false);
 
   const { messages, input, handleInputChange, handleSubmit } = useChat({
     onFinish: async () => {
@@ -35,9 +35,7 @@ const Page: React.FC = () => {
     const getContext = async () => {
       const response = await fetch("/api/context", {
         method: "POST",
-        body: JSON.stringify({
-          messages,
-        }),
+        body: JSON.stringify({ messages }),
       });
       const { context } = await response.json();
       setContext(context.map((c: any) => c.id));
@@ -45,61 +43,60 @@ const Page: React.FC = () => {
     if (gotMessages && messages.length >= prevMessagesLengthRef.current) {
       getContext();
     }
-
     prevMessagesLengthRef.current = messages.length;
   }, [messages, gotMessages]);
 
   return (
     <ErrorProvider>
-      <div className="flex flex-col justify-between h-screen bg-gray-800 p-2 mx-auto max-w-full">
-        <Header className="my-5" />
+      <div className="flex flex-col min-h-screen">
+        <Header className="bg-base-100 shadow-sm py-2" />
 
-        <button
-          onClick={() => {
-            window.open(
-              "https://github.com/pinecone-io/pinecone-vercel-starter",
-              "_blank"
-            );
-          }}
-          className="fixed right-12 top-4 md:right-12 md:top-6 text-xl text-white github-button"
-        >
-          <AiFillGithub />
-        </button>
-
-        <button
-          onClick={() => setModalOpen(true)}
-          className="fixed right-4 top-4 md:right-6 md:top-6 text-xl text-white animate-pulse-once info-button"
-        >
-          <AiOutlineInfoCircle />
-        </button>
-
-        <InstructionModal
-          isOpen={isModalOpen}
-          onClose={() => setModalOpen(false)}
-        />
-        <div className="flex w-full flex-grow overflow-hidden relative">
-          <Chat
-            input={input}
-            handleInputChange={handleInputChange}
-            handleMessageSubmit={handleMessageSubmit}
-            messages={messages}
-          />
-          <div className="absolute transform translate-x-full transition-transform duration-500 ease-in-out right-0 w-2/3 h-full bg-gray-700 overflow-y-auto lg:static lg:translate-x-0 lg:w-2/5 lg:mx-2 rounded-lg">
-            <Context className="" selected={context} />
+        <main className="flex-grow flex overflow-hidden bg-base-100 p-4 h-[calc(100vh-64px)]">
+          <div className="flex-1 flex flex-col mr-4">
+            <div className="card bg-base-200 shadow-xl flex-grow flex flex-col h-full">
+              <div className="card-body flex-grow overflow-hidden">
+                <Chat
+                  input={input}
+                  handleInputChange={handleInputChange}
+                  handleMessageSubmit={handleMessageSubmit}
+                  messages={messages}
+                  isCrawlComplete={isCrawlComplete}
+                />
+              </div>
+            </div>
           </div>
+
+          <div className="w-1/3 overflow-auto">
+            <Context
+              className="h-full"
+              selected={context}
+              onCrawlComplete={setIsCrawlComplete}
+            />
+          </div>
+        </main>
+
+        <div className="btm-nav">
           <button
-            type="button"
-            className="absolute left-20 transform -translate-x-12 bg-gray-800 text-white rounded-l py-2 px-4 lg:hidden"
-            onClick={(e) => {
-              e.currentTarget.parentElement
-                ?.querySelector(".transform")
-                ?.classList.toggle("translate-x-full");
-            }}
+            className="text-primary"
+            onClick={() =>
+              window.open(
+                "https://github.com/pinecone-io/pinecone-vercel-starter",
+                "_blank"
+              )
+            }
           >
-            ☰
+            <AiFillGithub className="h-5 w-5" />
+          </button>
+          <button className="text-primary" onClick={() => setModalOpen(true)}>
+            <AiOutlineInfoCircle className="h-5 w-5" />
           </button>
         </div>
       </div>
+
+      <InstructionModal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+      />
     </ErrorProvider>
   );
 };

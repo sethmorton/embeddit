@@ -28,7 +28,7 @@ class RedditApiService {
           headers: this.generateHeader(),
           params: {
             limit,
-            t: "all", // This parameter sets the time range: all, year, month, week, day
+            t: "month", // This parameter sets the time range: all, year, month, week, day
           },
         }
       );

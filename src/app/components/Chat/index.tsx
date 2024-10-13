@@ -1,42 +1,47 @@
 // Chat.tsx
-
 import React, { FormEvent, ChangeEvent } from "react";
 import Messages from "./Messages";
 import { Message } from "ai/react";
+import { Send } from "lucide-react";
 
-interface Chat {
+interface ChatProps {
   input: string;
   handleInputChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleMessageSubmit: (e: FormEvent<HTMLFormElement>) => Promise<void>;
   messages: Message[];
+  isCrawlComplete: boolean;
 }
 
-const Chat: React.FC<Chat> = ({
+const Chat: React.FC<ChatProps> = ({
   input,
   handleInputChange,
   handleMessageSubmit,
   messages,
+  isCrawlComplete,
 }) => {
   return (
-    <div id="chat" className="flex flex-col w-full lg:w-3/5 mr-4 mx-5 lg:mx-0">
-      <Messages messages={messages} />
-      <>
-        <form
-          onSubmit={handleMessageSubmit}
-          className="mt-5 mb-5 relative bg-gray-700 rounded-lg"
-        >
+    <div className="flex flex-col h-full">
+      <div className="flex-grow overflow-auto">
+        <Messages messages={messages} isCrawlComplete={isCrawlComplete} />
+      </div>
+      <div className="p-4 bg-base-200 mb-4">
+        <form onSubmit={handleMessageSubmit} className="flex">
           <input
             type="text"
-            className="input-glow appearance-none border rounded w-full py-2 px-3 text-gray-200 leading-tight focus:outline-none focus:shadow-outline pl-3 pr-10 bg-gray-600 border-gray-600 transition-shadow duration-200"
+            placeholder="Type your message..."
             value={input}
             onChange={handleInputChange}
+            className="input input-bordered flex-grow mr-2"
           />
-
-          <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-            Press ⮐ to send
-          </span>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={!isCrawlComplete}
+          >
+            <Send className="h-4 w-4" />
+          </button>
         </form>
-      </>
+      </div>
     </div>
   );
 };

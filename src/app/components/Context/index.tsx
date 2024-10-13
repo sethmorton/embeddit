@@ -2,30 +2,32 @@ import React, { useState, useEffect, useCallback } from "react";
 import { IUrlEntry } from "./UrlButton";
 import { Card, ICard } from "./Card";
 import { clearIndex, crawlDocument } from "./utils";
-import { Button } from "./Button";
 import { ServerlessSpecCloudEnum } from "@pinecone-database/pinecone";
-import LoadingIcon from "../Loading";
+import { Input } from "./Input";
+import { Button } from "./Button";
+
 interface ContextProps {
   className: string;
   selected: string[] | null;
+  onCrawlComplete: (completed: boolean) => void; // Callback to notify when crawl is complete
 }
 
-export const Context: React.FC<ContextProps> = ({ className, selected }) => {
+export const Context: React.FC<ContextProps> = ({
+  className,
+  selected,
+  onCrawlComplete,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [entries, setEntries] = useState<IUrlEntry[]>([]);
   const [cards, setCards] = useState<ICard[]>([]);
-  const [subreddit, setSubreddit] = useState("sibo");
   const [limit, setLimit] = useState(10);
-  const [chunkSize, setChunkSize] = useState(256);
-  const [chunkOverlap, setChunkOverlap] = useState(1);
-  const [indexName, setIndexName] = useState(process.env.PINECONE_INDEX || "");
-  const [cloudName, setCloudName] = useState<ServerlessSpecCloudEnum>(
+  const [subreddit, setSubreddit] = useState("sibo");
+  const [indexName] = useState(process.env.PINECONE_INDEX || "");
+  const [cloudName] = useState<ServerlessSpecCloudEnum>(
     (process.env.PINECONE_CLOUD as ServerlessSpecCloudEnum) || "aws"
   );
-  const [regionName, setRegionName] = useState(
-    process.env.PINECONE_REGION || "us-west-2"
-  );
+  const [regionName] = useState(process.env.PINECONE_REGION || "us-west-2");
+  const [isCrawlComplete, setIsCrawlComplete] = useState(false);
 
   useEffect(() => {
     const element = selected && document.getElementById(selected[0]);
@@ -34,7 +36,7 @@ export const Context: React.FC<ContextProps> = ({ className, selected }) => {
 
   const handleCrawl = useCallback(async () => {
     setIsLoading(true);
-    setProgress(0);
+    setIsCrawlComplete(false);
     console.log("CRAWLING");
     try {
       await crawlDocument(
@@ -45,127 +47,70 @@ export const Context: React.FC<ContextProps> = ({ className, selected }) => {
         indexName,
         cloudName,
         regionName,
-        chunkSize,
-        chunkOverlap
+        256, // chunkSize
+        1 // chunkOverlap
       );
+      setIsCrawlComplete(true);
+      onCrawlComplete(true); // Notify parent that crawling is complete
     } catch (error) {
-      console.error(error);
+      console.error("Crawl failed:", error);
+      onCrawlComplete(false); // Notify parent about failure
     } finally {
       setIsLoading(false);
     }
-  }, [
-    subreddit,
-    limit,
-    indexName,
-    cloudName,
-    regionName,
-    chunkSize,
-    chunkOverlap,
-  ]);
-
-  const DropdownLabel: React.FC<
-    React.PropsWithChildren<{ htmlFor: string }>
-  > = ({ htmlFor, children }) => (
-    <label htmlFor={htmlFor} className="text-white p-2 font-bold">
-      {children}
-    </label>
-  );
+  }, [subreddit, limit, indexName, cloudName, regionName, onCrawlComplete]);
 
   return (
     <div
-      className={`flex flex-col border-2 overflow-y-auto rounded-lg border-gray-500 w-full ${className}`}
+      className={`flex flex-col bg-base-200 rounded-lg shadow-xl ${className}`}
     >
-      <div className="flex flex-col items-start sticky top-0 w-full">
-        <div className="flex flex-col items-start lg:flex-row w-full lg:flex-wrap p-2">
-          <div className="flex flex-col w-full mb-4">
-            <DropdownLabel htmlFor="subreddit">Subreddit:</DropdownLabel>
-            <input
-              id="subreddit"
-              type="text"
-              value={subreddit}
-              onChange={(e) => setSubreddit(e.target.value)}
-              className="p-2 bg-gray-700 rounded text-white w-full"
-            />
-          </div>
-          <div className="flex flex-col w-full mb-4">
-            <DropdownLabel htmlFor="limit">Limit:</DropdownLabel>
-            <input
-              id="limit"
-              type="number"
-              value={limit}
-              onChange={(e) => setLimit(parseInt(e.target.value))}
-              className="p-2 bg-gray-700 rounded text-white w-full"
-            />
-          </div>
+      <div className="p-4">
+        <h2 className="text-2xl font-bold mb-4">Context Settings</h2>
+        <div className="form-control mb-4">
+          <label className="label">
+            <span className="label-text">Subreddit</span>
+          </label>
+          <Input
+            type="text"
+            placeholder="Enter subreddit"
+            value={subreddit}
+            onChange={(e) => setSubreddit(e.target.value)}
+            className="input input-bordered w-full"
+          />
+        </div>
+        <div className="form-control mb-4">
+          <label className="label">
+            <span className="label-text">Limit</span>
+          </label>
+          <Input
+            type="number"
+            placeholder="Enter limit"
+            value={limit.toString()}
+            onChange={(e) => setLimit(parseInt(e.target.value))}
+            className="input input-bordered w-full"
+          />
+        </div>
+        <div className="flex space-x-2">
           <Button
-            className="w-full my-2 uppercase active:scale-[98%] transition-transform duration-100"
-            style={{
-              backgroundColor: "#4f6574",
-              color: "white",
-            }}
             onClick={handleCrawl}
             disabled={isLoading}
+            className={`btn btn-primary flex-1 ${isLoading ? "loading" : ""}`}
           >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <LoadingIcon />
-                <span className="ml-2">Crawling... {progress}%</span>
-              </div>
-            ) : (
-              "Crawl Subreddit"
-            )}
+            {isLoading ? "Crawling..." : "Crawl Subreddit"}
           </Button>
-        </div>
-        <div className="flex-grow w-full px-4">
           <Button
-            className="w-full my-2 uppercase active:scale-[98%] transition-transform duration-100"
-            style={{
-              backgroundColor: "#4f6574",
-              color: "white",
-            }}
             onClick={() => clearIndex(setEntries, setCards)}
+            className="btn btn-secondary flex-1"
           >
             Clear Index
           </Button>
         </div>
-        <div className="text-left w-full flex flex-col rounded-b-lg bg-gray-600 p-3 subpixel-antialiased">
-          <div className="my-4 flex flex-col">
-            <div className="flex flex-col w-full">
-              <DropdownLabel htmlFor="chunkSize">
-                Chunk Size: {chunkSize}
-              </DropdownLabel>
-              <input
-                className="p-2 bg-gray-700"
-                type="range"
-                id="chunkSize"
-                min={1}
-                max={2048}
-                value={chunkSize}
-                onChange={(e) => setChunkSize(parseInt(e.target.value))}
-              />
-            </div>
-            <div className="flex flex-col w-full">
-              <DropdownLabel htmlFor="chunkOverlap">
-                Chunk Overlap: {chunkOverlap}
-              </DropdownLabel>
-              <input
-                className="p-2 bg-gray-700"
-                type="range"
-                id="chunkOverlap"
-                min={1}
-                max={200}
-                value={chunkOverlap}
-                onChange={(e) => setChunkOverlap(parseInt(e.target.value))}
-              />
-            </div>
-          </div>
-        </div>
       </div>
-      <div className="flex flex-wrap w-full">
-        {cards &&
-          cards.map((card, key) => (
-            <Card key={key} card={card} selected={selected} />
-          ))}
+      <div className="divider"></div>
+      <div className="p-4 overflow-y-auto flex-1">
+        {cards.map((card, key) => (
+          <Card key={key} card={card} selected={selected} />
+        ))}
       </div>
     </div>
   );

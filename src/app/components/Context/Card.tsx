@@ -16,17 +16,19 @@ interface ICardProps {
 export const Card: FC<ICardProps> = ({ card, selected }) => (
   <div
     id={card.metadata.hash}
-    className={`card w-full p-5 m-2 text-white ${
+    className={`card bg-base-100 shadow-sm transition-all duration-300 ease-in-out mb-4 ${
       selected && selected.includes(card.metadata.hash)
-        ? "bg-gray-600"
-        : "bg-gray-800"
-    } ${
-      selected && selected.includes(card.metadata.hash)
-        ? "border-double border-4 border-sky-500"
-        : "opacity-60 hover:opacity-80 transition-opacity duration-300 ease-in-out"
+        ? "border-2 border-primary"
+        : "border border-base-300 hover:border-primary/50"
     }`}
   >
-    <ReactMarkdown>{card.pageContent}</ReactMarkdown>
-    <b className="text-xs">{card.metadata.hash}</b>
+    <div className="card-body">
+      <ReactMarkdown className="prose">{card.pageContent}</ReactMarkdown>
+      <div className="card-actions justify-end">
+        <span className="text-xs text-base-content/60">
+          {card.metadata.hash}
+        </span>
+      </div>
+    </div>
   </div>
 );

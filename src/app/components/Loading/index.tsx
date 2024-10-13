@@ -2,7 +2,7 @@ import React from "react";
 
 const LoadingIcon: React.FC = () => (
   <svg
-    className="animate-spin h-5 w-5 text-white"
+    className="animate-spin h-4 w-4 text-black"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -13,7 +13,7 @@ const LoadingIcon: React.FC = () => (
       cy="12"
       r="10"
       stroke="currentColor"
-      strokeWidth="4"
+      strokeWidth="3"
     ></circle>
     <path
       className="opacity-75"
