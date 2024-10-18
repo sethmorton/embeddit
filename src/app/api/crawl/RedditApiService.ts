@@ -1,47 +1,89 @@
-// reddit api service
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import { RedditPost } from "../../../../types";
+
 class RedditApiService {
-  auth_token: string;
-  userAgent: string;
-  constructor(auth_token: string, userAgent: string) {
-    this.auth_token = auth_token;
+  private axiosInstance: AxiosInstance;
+  private refreshToken: string;
+  private accessToken: string;
+  private tokenExpirationTime: number;
+  private clientId: string;
+  private clientSecret: string;
+  private userAgent: string;
+
+  constructor(
+    refreshToken: string,
+    clientId: string,
+    clientSecret: string,
+    userAgent: string
+  ) {
+    this.refreshToken = refreshToken;
+    this.clientId = clientId;
+    this.clientSecret = clientSecret;
     this.userAgent = userAgent;
+    this.accessToken = "";
+    this.tokenExpirationTime = 0;
+
+    this.axiosInstance = axios.create({
+      baseURL: "https://oauth.reddit.com",
+    });
+
+    this.axiosInstance.interceptors.request.use(async (config) => {
+      if (this.isTokenExpired()) {
+        await this.refreshAccessToken();
+      }
+      config.headers["Authorization"] = `Bearer ${this.accessToken}`;
+      config.headers["User-Agent"] = this.userAgent;
+      return config;
+    });
   }
-  generateHeader() {
-    return {
-      Authorization: `bearer ${this.auth_token}`,
-      "User-Agent": this.userAgent,
-    };
+
+  private isTokenExpired(): boolean {
+    return Date.now() >= this.tokenExpirationTime;
   }
-  async getSubredditPosts(
-    subreddit: string,
-    limit: number = 10
-  ): Promise<any[]> {
+
+  private async refreshAccessToken(): Promise<void> {
     try {
-      console.log(
-        `https://oauth.reddit.com/r/${subreddit}/top?limit=${limit}&t=all`
-      );
-      const response = await axios.get(
-        `https://oauth.reddit.com/r/${subreddit}/top?limit=${limit}`,
+      const response = await axios.post(
+        "https://www.reddit.com/api/v1/access_token",
+        `grant_type=refresh_token&refresh_token=${this.refreshToken}`,
         {
-          headers: this.generateHeader(),
-          params: {
-            limit,
-            t: "month", // This parameter sets the time range: all, year, month, week, day
+          auth: {
+            username: this.clientId,
+            password: this.clientSecret,
+          },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
           },
         }
       );
-      return response.data.data.children;
+
+      this.accessToken = response.data.access_token;
+      this.tokenExpirationTime = Date.now() + response.data.expires_in * 1000;
+    } catch (error) {
+      console.error("Error refreshing access token:", error);
+      throw error;
+    }
+  }
+
+  async getSubredditPosts(
+    subreddit: string,
+    limit: number = 10
+  ): Promise<RedditPost[]> {
+    try {
+      const response = await this.axiosInstance.get(`/r/${subreddit}/top`, {
+        params: {
+          limit,
+          t: "year",
+        },
+      });
+      return this.extractPostData(response.data.data.children);
     } catch (error) {
       console.error("Error fetching subreddit posts", error);
       return [];
     }
   }
 
-  // In RedditApiService.ts
-
-  extractPostData(rawPosts: any[]): RedditPost[] {
+  private extractPostData(rawPosts: any[]): RedditPost[] {
     return rawPosts.map((post) => ({
       id: post.data.id,
       title: post.data.title,
@@ -60,8 +102,7 @@ class RedditApiService {
     subreddit: string,
     limit: number = 10
   ): Promise<RedditPost[]> {
-    const rawPosts = await this.getSubredditPosts(subreddit, limit);
-    return this.extractPostData(rawPosts);
+    return this.getSubredditPosts(subreddit, limit);
   }
 }
 

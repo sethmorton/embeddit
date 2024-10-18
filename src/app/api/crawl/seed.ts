@@ -34,7 +34,9 @@ async function seed(
     const { chunkSize, chunkOverlap } = options;
 
     const redditApiService = new RedditApiService(
-      process.env.REDDIT_AUTH_TOKEN!,
+      process.env.REDDIT_REFRESH_TOKEN!,
+      process.env.REDDIT_CLIENT_ID!,
+      process.env.REDDIT_CLIENT_SECRET!,
       process.env.REDDIT_USER_AGENT!
     );
 
